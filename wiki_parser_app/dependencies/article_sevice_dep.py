@@ -27,9 +27,10 @@ def get_llm_service() -> SummaryService:
 
 
 def get_article_service(
+    session: AsyncSession = Depends(get_session_with_commit),
     article_repo: ArticleRepository = Depends(get_article_repo),
     summary_repo: SummaryRepository = Depends(get_summary_repo),
     parser: WikipediaParser = Depends(get_parser),
     llm_service: SummaryService = Depends(get_llm_service)
 ) -> ArticleService:
-    return ArticleService(article_repo, summary_repo, parser, llm_service)
+    return ArticleService(session, article_repo, summary_repo, parser, llm_service)

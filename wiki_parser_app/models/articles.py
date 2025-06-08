@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List
 
-from sqlalchemy import String, Text, ForeignKey
+from sqlalchemy import String, Text, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
@@ -12,6 +12,7 @@ class Article(Base):
     title: Mapped[str] = mapped_column(String(255))
     url: Mapped[str] = mapped_column(String(512), unique=True)
     content: Mapped[Optional[str]] = mapped_column(Text)
+    parsed: Mapped[bool] = mapped_column(Boolean, default=False)
     level: Mapped[int] = mapped_column(default=0)
 
     parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -20,7 +21,7 @@ class Article(Base):
         nullable=True
     )
 
-    parent: Mapped[Optional["Article"]] = relationship(remote_side='articles.id')
+    parent: Mapped[Optional["Article"]] = relationship(remote_side='Article.id')
     children: Mapped[List["Article"]] = relationship(back_populates="parent")
     summary: Mapped[Optional["Summary"]] = relationship(
         back_populates="article",
@@ -39,5 +40,5 @@ class Summary(Base):
 
     article: Mapped["Article"] = relationship(
         "Article",
-        back_populates="summary_rel"
+        back_populates="summary"
     )
