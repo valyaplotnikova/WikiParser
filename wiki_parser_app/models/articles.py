@@ -20,18 +20,9 @@ class Article(Base):
         nullable=True
     )
 
-    # Отношения
-    parent: Mapped[Optional["Article"]] = relationship(
-        "Article",
-        remote_side=[id],
-        back_populates="children"
-    )
-    children: Mapped[List["Article"]] = relationship(
-        "Article",
-        back_populates="parent"
-    )
-    summary_rel: Mapped[Optional["Summary"]] = relationship(
-        "Summary",
+    parent: Mapped[Optional["Article"]] = relationship(remote_side='articles.id')
+    children: Mapped[List["Article"]] = relationship(back_populates="parent")
+    summary: Mapped[Optional["Summary"]] = relationship(
         back_populates="article",
         uselist=False,
         cascade="all, delete-orphan"

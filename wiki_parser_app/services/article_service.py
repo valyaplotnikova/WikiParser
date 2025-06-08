@@ -1,6 +1,9 @@
-from typing import Optional, List
+from typing import Optional
+from urllib.parse import unquote
+
 from loguru import logger
-from wiki_parser_app.models.articles import Article
+
+from wiki_parser_app.models.articles import Article, Summary
 from wiki_parser_app.repositories.article_repo import ArticleRepository
 from wiki_parser_app.repositories.summary_repo import SummaryRepository
 from wiki_parser_app.services.llm_service import SummaryService
@@ -21,20 +24,27 @@ class ArticleService:
         self.llm_service = llm_service
 
     async def parse_and_save_article(self, url: str) -> Optional[Article]:
-        """Основной метод для парсинга и сохранения статьи"""
         try:
             articles = await self.parser.parse_article(url)
-            root_article = self._find_root_article(articles, url)
+            root_article = next((a for a in articles if a.url == self._normalize_url(url)), None)
 
-            if root_article:
+            if root_article and not root_article.summary:
+                await self._generate_summary(root_article)
 
-                return root_article
-            return None
+            await self.parser.session.commit()
+            return root_article
+
         except Exception as e:
-            logger.error(f"Service error: {str(e)}")
+            await self.parser.session.rollback()
+            logger.error(f"Service error: {e}")
             raise
 
-    def _find_root_article(self, articles: List[Article], original_url: str) -> Optional[Article]:
-        """Находит корневую статью по оригинальному URL"""
-        clean_url = original_url.split("/wiki/")[-1]
-        return next((a for a in articles if a.url.endswith(clean_url)), None)
+    async def _generate_summary(self, article: Article) -> None:
+        if not article.content:
+            return
+
+        summary_text = await self.llm_service.generate_summary(article.content)
+        if summary_text:
+            article.summary = Summary(content=summary_text)
+
+

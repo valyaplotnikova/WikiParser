@@ -10,17 +10,26 @@ from wiki_parser_app.services.llm_service import SummaryService
 from wiki_parser_app.services.parser_service import WikipediaParser
 
 
-def get_article_service(
-        session: AsyncSession = Depends(get_session_with_commit)
-) -> ArticleService:
-    article_repo = ArticleRepository(session)
-    summary_repo = SummaryRepository(session)
-    parser = WikipediaParser(session)
-    llm_service = SummaryService(api_key=api_key)
+def get_article_repo(session: AsyncSession = Depends(get_session_with_commit)) -> ArticleRepository:
+    return ArticleRepository(session)
 
-    return ArticleService(
-        article_repo=article_repo,
-        summary_repo=summary_repo,
-        parser=parser,
-        llm_service=llm_service
-    )
+
+def get_summary_repo(session: AsyncSession = Depends(get_session_with_commit)) -> SummaryRepository:
+    return SummaryRepository(session)
+
+
+def get_parser(session: AsyncSession = Depends(get_session_with_commit)) -> WikipediaParser:
+    return WikipediaParser(session)
+
+
+def get_llm_service() -> SummaryService:
+    return SummaryService(api_key=api_key)
+
+
+def get_article_service(
+    article_repo: ArticleRepository = Depends(get_article_repo),
+    summary_repo: SummaryRepository = Depends(get_summary_repo),
+    parser: WikipediaParser = Depends(get_parser),
+    llm_service: SummaryService = Depends(get_llm_service)
+) -> ArticleService:
+    return ArticleService(article_repo, summary_repo, parser, llm_service)
