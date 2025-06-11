@@ -167,4 +167,3 @@ cython_debug/
 .DS_Store
 database.ini/
 pg_data/
-
